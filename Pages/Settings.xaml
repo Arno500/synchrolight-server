@@ -1,0 +1,71 @@
+﻿<Page
+    x:Class="LightServer.Pages.Settings"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:domain="using:LightServer.Managers"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <StackPanel Orientation="Vertical" Margin="15" Spacing="20" HorizontalAlignment="Stretch">
+        <Expander
+             IsExpanded="True"
+             ExpandDirection="Down"
+             VerticalAlignment="Top"
+             HorizontalAlignment="Stretch"
+     >
+            <Expander.Header>
+                ArtNet settings
+            </Expander.Header>
+
+            <Expander.Content>
+                <StackPanel Orientation="Vertical" Margin="15" Spacing="20" HorizontalAlignment="Center">
+                    <ToggleSwitch Header="ArtNet support"
+                      IsOn="{x:Bind domain:SettingsManager.settings.ArtNetEnabled, Mode=TwoWay}"
+                      Toggled="{x:Bind domain:SettingsManager.Save}"/>
+                    <NumberBox
+                        Header="DMX Universe"
+                        SpinButtonPlacementMode="Inline"
+                        Minimum="1"
+                        Maximum="255"
+                        Value="{x:Bind domain:SettingsManager.settings.DMXUniverse, Mode=TwoWay}"
+                        ValueChanged="{x:Bind domain:SettingsManager.Save}"
+                        IsEnabled="{x:Bind domain:SettingsManager.settings.ArtNetEnabled, Mode=OneWay}"
+                    />  
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <NumberBox
+                            Header="DMX Channel Red"
+                            SpinButtonPlacementMode="Inline"
+                            Minimum="1"
+                            Maximum="512"
+                            MinWidth="200"
+                            Value="{x:Bind domain:SettingsManager.settings.DMXChannelR, Mode=TwoWay}"
+                            ValueChanged="{x:Bind domain:SettingsManager.Save}"
+                            IsEnabled="{x:Bind domain:SettingsManager.settings.ArtNetEnabled, Mode=OneWay}"
+                        />
+                        <NumberBox
+                            Header="DMX Channel Green"
+                            SpinButtonPlacementMode="Inline"
+                            Minimum="1"
+                            Maximum="512"
+                            MinWidth="200"
+                            Value="{x:Bind domain:SettingsManager.settings.DMXChannelG, Mode=TwoWay}"
+                            ValueChanged="{x:Bind domain:SettingsManager.Save}"
+                            IsEnabled="{x:Bind domain:SettingsManager.settings.ArtNetEnabled, Mode=OneWay}"
+                        />
+                        <NumberBox
+                            Header="DMX Channel Blue"
+                            SpinButtonPlacementMode="Inline"
+                            Minimum="1"
+                            Maximum="512"
+                            MinWidth="200"
+                            Value="{x:Bind domain:SettingsManager.settings.DMXChannelB, Mode=TwoWay}"
+                            ValueChanged="{x:Bind domain:SettingsManager.Save}"
+                            IsEnabled="{x:Bind domain:SettingsManager.settings.ArtNetEnabled, Mode=OneWay}"
+                        />
+                    </StackPanel>
+                </StackPanel>
+            </Expander.Content>
+        </Expander>
+    </StackPanel>
+</Page>

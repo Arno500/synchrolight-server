@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "LightServer (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "LightServer (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
