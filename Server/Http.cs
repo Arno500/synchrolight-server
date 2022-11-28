@@ -1,11 +1,14 @@
+using DBModels;
+using LightServer.Types;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
-using DBModels;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace LightServer.Server
 {
@@ -31,55 +34,67 @@ namespace LightServer.Server
             return Results.Ok("Server is working correctly!");
         }
 
-        private async Task<Beatsheet> GetBeatsheet(string artist, string title, HttpContext context)
+        private async Task<BitSheet> GetBeatsheet(string artist, string title, HttpContext context)
         {
-            Beatsheet beatsheet;
-            using (var beatsheetContext = new BeatsheetContext())
+            Bitsheet beatsheet;
+            using (var beatsheetContext = new BitsheetContext())
             {
-                beatsheet = await beatsheetContext.Beatsheets.SingleAsync(b => b.Title == title && b.Artist == artist);
+                beatsheet = await beatsheetContext.Bitsheets.SingleAsync(b => b.Title == title && b.Artist == artist);
             }
-            return beatsheet;
+            return JsonSerializer.Deserialize<BitSheet>(beatsheet.BitsheetData);
         }
 
-        private async Task<IResult> StoreBeatsheet([FromBody] Beatsheet beatsheet, HttpContext context)
+        private async Task<IResult> StoreBeatsheet([FromBody] BitSheetDTO beatsheet, HttpContext context)
         {
-            using (var beatsheetContext = new BeatsheetContext())
+            HttpRequestRewindExtensions.EnableBuffering(context.Request, 5 * 1000 * 1000);
+            using (var beatsheetContext = new BitsheetContext())
             {
-                var alreadyExisting = await beatsheetContext.Beatsheets.SingleOrDefaultAsync(b => b.Title == beatsheet.Title && b.Artist == beatsheet.Artist);
+                var alreadyExisting = await beatsheetContext.Bitsheets.SingleOrDefaultAsync(b => b.Title == beatsheet.Metadata.Title && b.Artist == beatsheet.Metadata.Artist);
+                var serializeOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
                 if (alreadyExisting != null)
                 {
-                    var entry = beatsheetContext.Entry(alreadyExisting);
-                    // TODO: Needs testing
-                    entry.CurrentValues.SetValues(beatsheet);
-                } else
+                    alreadyExisting.Artist = beatsheet.Metadata.Artist;
+                    alreadyExisting.Title = beatsheet.Metadata.Title;
+                    alreadyExisting.BitsheetData = JsonSerializer.Serialize(beatsheet, serializeOptions);
+                    await beatsheetContext.SaveChangesAsync();
+                }
+                else
                 {
-                    await beatsheetContext.Beatsheets.AddAsync(beatsheet);
+                    var toStore = new Bitsheet();
+                    toStore.Artist = beatsheet.Metadata.Artist;
+                    toStore.Title = beatsheet.Metadata.Title;
+                    toStore.BitsheetData = JsonSerializer.Serialize(beatsheet, serializeOptions);
+                    await beatsheetContext.Bitsheets.AddAsync(toStore);
                 }
                 await beatsheetContext.SaveChangesAsync();
             }
-            return Results.Created($"/beatsheets/{beatsheet.Artist}/{beatsheet.Title}", beatsheet);
+            var urlEncoder = UrlEncoder.Create();
+            return Results.Created($"/beatsheets/{urlEncoder.Encode(beatsheet.Metadata.Artist)}/{urlEncoder.Encode(beatsheet.Metadata.Title)}", beatsheet);
         }
 
         private IEnumerable<BeatSheetListShape> ListBeatsheets(HttpContext context)
         {
             List<BeatSheetListShape> beatsheets;
-            using (var beatsheetContext = new BeatsheetContext())
+            using (var beatsheetContext = new BitsheetContext())
             {
-                beatsheets = beatsheetContext.Beatsheets.Select(b => new BeatSheetListShape() { Title = b.Title, Artist = b.Artist }).ToList();
+                beatsheets = beatsheetContext.Bitsheets.Select(b => new BeatSheetListShape() { Title = b.Title, Artist = b.Artist }).ToList();
             }
             return beatsheets;
         }
 
         private async Task<IResult> DeleteBeatsheet(string artist, string title, HttpContext context)
         {
-            using (var beatsheetContext = new BeatsheetContext())
+            using (var beatsheetContext = new BitsheetContext())
             {
-                var alreadyExisting = await beatsheetContext.Beatsheets.SingleOrDefaultAsync(b => b.Title == title && b.Artist == artist);
+                var alreadyExisting = await beatsheetContext.Bitsheets.SingleOrDefaultAsync(b => b.Title == title && b.Artist == artist);
                 if (alreadyExisting == null)
                 {
                     return Results.NotFound();
                 }
-                beatsheetContext.Beatsheets.Remove(alreadyExisting);
+                beatsheetContext.Bitsheets.Remove(alreadyExisting);
                 await beatsheetContext.SaveChangesAsync();
             }
             return Results.Ok();

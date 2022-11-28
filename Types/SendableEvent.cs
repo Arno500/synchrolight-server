@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace LightServer.Types
 {
@@ -8,7 +7,8 @@ namespace LightServer.Types
     {
         public Color Color { get; set; }
         public TimeSpan nextEventHint { get; set; }
-        public SendableEvent(LightEvent lightEvent, string zone) {
+        public SendableEvent(LightEvent lightEvent, string zone)
+        {
             nextEventHint = lightEvent.End - lightEvent.Start;
             switch (lightEvent.Event.EventType)
             {
@@ -25,6 +25,15 @@ namespace LightServer.Types
         {
             nextEventHint = lightEvent.End - lightEvent.Start;
             Color = lightEvent.Event.Color;
+        }
+
+        public SendableEvent() { }
+
+        public static SendableEvent EmptyEvent()
+        {
+            var evt = new SendableEvent();
+            evt.Color = new Color("#000000");
+            return evt;
         }
     }
 }

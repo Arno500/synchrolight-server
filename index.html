@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SynchroLight Web</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+        }
+
+        .color {
+            height: 100%;
+            width: 100%;
+            background-color: black;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="color"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("http://localhost:64321/beacons", {
+                withCredentials: false
+            })
+            .configureLogging(signalR.LogLevel.Information)
+            .build()
+
+        async function start() {
+            try {
+                await connection.start()
+                const channel = prompt("Please enter the thing that we told you to enter")
+                await connection.invoke("SubscribeToChannel", channel)
+                console.log("SignalR Connected.")
+            } catch (err) {
+                console.log(err)
+                setTimeout(start, 5000)
+            }
+        };
+
+        connection.onclose(async () => {
+            await start()
+        });
+
+        connection.on("LightEvent", ({ color }) => {
+            document.querySelector(".color").style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`
+        });
+
+        // Start the connection.
+        start();
+
+        function toggleFullScreen() {
+            const div = document.querySelector(".color")
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                div.style.cursor = "none"
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+                div.style.cursor = "initial"
+            }
+        }
+
+        document.addEventListener("click", (e) => {
+            toggleFullScreen()
+        }, false);
+    </script>
+</body>
+
+</html>

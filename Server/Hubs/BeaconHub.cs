@@ -10,7 +10,7 @@ namespace LightServer.Server.Hubs
     {
         public async Task ReportStage(string id)
         {
-            await Clients.All.SendAsync("ReceiveMessage", id);
+            await Clients.All.SendAsync("ReportStage", id);
         }
 
         public void SubscribeToChannel(string channelId)

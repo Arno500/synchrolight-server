@@ -1,6 +1,5 @@
 using DBModels;
 using LightServer.Managers;
-using LightServer.Pages;
 using LightServer.Server;
 using LightServer.Server.Hubs;
 using Makaretu.Dns;
@@ -33,7 +32,7 @@ namespace LightServer
         public App()
         {
             // Prepare DB
-            new BeatsheetContext().Database.MigrateAsync();
+            new BitsheetContext().Database.MigrateAsync();
 
             // Initialize settings
             new SettingsManager();
@@ -44,7 +43,7 @@ namespace LightServer
                 options.AddPolicy(name: "AllowAnything",
                     policy =>
                     {
-                        policy.AllowAnyOrigin().AllowAnyMethod();
+                        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
                     });
             });
 
@@ -54,9 +53,9 @@ namespace LightServer
 
             host.MapHub<BeaconHub>("/beacons");
             new WebSocket(host.Services.GetRequiredService(typeof(IHubContext<BeaconHub>)) as IHubContext<BeaconHub>);
-            
+
             host.Urls.Add("http://*:64321");
-            
+
             host.UseCors("AllowAnything");
 
             new Http().Configure(host);
@@ -64,6 +63,9 @@ namespace LightServer
 
             // Start ArtNet client
             new ArtNetServer();
+
+            // Start Bitsheet matching and reading system;
+            new BitSheetManager();
 
             this.InitializeComponent();
         }

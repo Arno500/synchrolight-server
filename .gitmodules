@@ -1,0 +1,3 @@
+[submodule "BitSheets"]
+	path = BitSheets
+	url = https://github.com/Allwhy/BitSheets

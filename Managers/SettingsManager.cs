@@ -105,7 +105,8 @@ namespace LightServer.Managers
             if (settings.ArtNetEnabled && !lastSavedSettings.ArtNetEnabled)
             {
                 new ArtNetServer();
-            } else if (!settings.ArtNetEnabled && lastSavedSettings.ArtNetEnabled)
+            }
+            else if (!settings.ArtNetEnabled && lastSavedSettings.ArtNetEnabled)
             {
                 ArtNetServer.Dispose();
             }

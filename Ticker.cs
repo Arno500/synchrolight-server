@@ -11,18 +11,20 @@ namespace LightServer
 
     internal class Ticker
     {
-        private static Ticker singletonInstance = new Ticker();
-        private List<Action<PlayerState>> delegateList = new List<Action<PlayerState>>();
+        public const int GRANULARITY = 1;
 
-        private static Lazy<NowPlayingSessionManager> sessionManager = new Lazy<NowPlayingSessionManager>(() => new NPSMLib.NowPlayingSessionManager());
+        private static Ticker singletonInstance = new();
+        private List<Action<PlayerState, bool>> delegateList = new();
+
+        private static Lazy<NowPlayingSessionManager> sessionManager = new(() => new NPSMLib.NowPlayingSessionManager());
         private static bool sessionManagerRegistered = false;
         private static MediaPlaybackDataSource dataSource = null;
 
-        public static PlayerState playerState = new PlayerState();
+        public static PlayerState playerState = new();
 
         private Ticker()
         {
-            var timer = new Timer(5);
+            var timer = new Timer(GRANULARITY);
             timer.Elapsed += RunEvent;
             timer.AutoReset = true;
             timer.Enabled = true;
@@ -76,13 +78,23 @@ namespace LightServer
             var timelineProps = ds.GetMediaTimelineProperties();
             var position = playbackInfos.PlaybackState == NPSMLib.MediaPlaybackState.Playing ? DateTime.Now - timelineProps.PositionSetFileTime + timelineProps.Position : timelineProps.Position;
             var ticker = Ticker.GetInstance;
+            var changed = false;
             playerState.PlayState = playbackInfos.PlaybackState;
             playerState.Position = position;
             playerState.Duration = timelineProps.MaxSeekTime;
-            playerState.Title = objectInfos.Title;
-            playerState.Artist = objectInfos.Artist ?? objectInfos.AlbumArtist;
+            playerState.StartTime = timelineProps.PositionSetFileTime.Add(-timelineProps.Position);
+            if (playerState.Title != objectInfos.Title)
+            {
+                changed = true;
+                playerState.Title = objectInfos.Title;
+            }
+            if (playerState.Artist != (objectInfos.Artist ?? objectInfos.AlbumArtist))
+            {
+                changed = true;
+                playerState.Artist = objectInfos.Artist ?? objectInfos.AlbumArtist;
+            }
             playerState.AlbumImage = ds.GetThumbnailStream();
-            ticker.delegateList.ForEach((callback) => App.Current.As<App>().dispatcherQueue.TryEnqueue(() => callback(playerState)));
+            ticker.delegateList.ForEach((callback) => callback(playerState, changed));
         }
 
         private static void RunEvent(object source, ElapsedEventArgs e)
@@ -90,13 +102,13 @@ namespace LightServer
             Ticker.UpdatePlayerState();
         }
 
-        public static void AddCallback(Action<PlayerState> callback)
+        public static void AddCallback(Action<PlayerState, bool> callback)
         {
             var ticker = Ticker.GetInstance;
             ticker.delegateList.Add(callback);
         }
 
-        public static bool RemoveCallback(Action<PlayerState> callback)
+        public static bool RemoveCallback(Action<PlayerState, bool> callback)
         {
             var ticker = Ticker.GetInstance;
             return ticker.delegateList.Remove(callback);

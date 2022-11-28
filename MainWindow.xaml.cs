@@ -106,7 +106,8 @@ namespace LightServer
             if (item.Tag.ToLower() == "settings")
             {
                 nv.SelectedItem = nv.SettingsItem;
-            } else
+            }
+            else
             {
                 nv.SelectedItem = nv.MenuItems
                .OfType<NavigationViewItem>()

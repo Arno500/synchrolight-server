@@ -1,12 +1,10 @@
-using System.Net;
-using Haukcode.ArtNet.Sockets;
-using Haukcode.ArtNet.Packets;
 using Haukcode.ArtNet;
-using System.Collections.Generic;
+using Haukcode.ArtNet.Packets;
+using Haukcode.ArtNet.Sockets;
 using LightServer.Managers;
-using System.Threading;
 using System;
-using System.Security.Cryptography;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace LightServer.Server
 {
@@ -17,7 +15,8 @@ namespace LightServer.Server
         public ArtNetServer()
         {
             if (!SettingsManager.settings.ArtNetEnabled) return;
-            lock (sockets) {
+            lock (sockets)
+            {
                 var addresses = Helper.GetAddressesFromInterfaceType();
                 foreach (var address in addresses)
                 {
@@ -47,7 +46,7 @@ namespace LightServer.Server
                         BindIpAddress = socket.LocalIP.GetAddressBytes(),
                         SwOut = new byte[] { (byte)SettingsManager.settings.DMXUniverse, (byte)0b00000000, (byte)0b00000000, (byte)0b00000000 },
                         PortCount = 1,
-                        PortTypes = new byte[]{ (byte)0b10000000, (byte)0b00000000, (byte)0b00000000, (byte)0b00000000 },
+                        PortTypes = new byte[] { (byte)0b10000000, (byte)0b00000000, (byte)0b00000000, (byte)0b00000000 },
                         FirmwareVersion = 1,
                     };
                     Thread.Sleep((int)((new Random()).NextDouble() * 1000));
