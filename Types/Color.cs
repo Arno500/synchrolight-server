@@ -15,5 +15,12 @@ namespace LightServer.Types
             G = color.G;
             B = color.B;
         }
+
+        public Color(byte R, byte G, byte B)
+        {
+            this.R = R;
+            this.G = G;
+            this.B = B;
+        }
     }
 }

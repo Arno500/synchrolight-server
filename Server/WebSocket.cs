@@ -32,6 +32,12 @@ namespace LightServer.Server
             repeatTimer.AutoReset = true;
         }
 
+        public static async Task SendEvent(SendableEvent? lightEvent)
+        {
+            repeatTimer.Stop();
+            await hubContext.Clients.All.SendAsync("LightEvent", lightEvent);
+        }
+
         public static async Task SendEvent()
         {
             repeatTimer.Stop();
@@ -40,7 +46,7 @@ namespace LightServer.Server
 
         private void RepeatEvent(object sender, ElapsedEventArgs e)
         {
-            if (LastEvent.HasValue && LastEvent.Value.Animation.HasValue)
+            if (LastEvent.HasValue && !LastEvent.Value.Animation.HasValue)
             {
                 _ = ProceedToSend(LastEvent.Value);
             }

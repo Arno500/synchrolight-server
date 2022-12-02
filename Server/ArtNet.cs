@@ -2,6 +2,7 @@ using Haukcode.ArtNet;
 using Haukcode.ArtNet.Packets;
 using Haukcode.ArtNet.Sockets;
 using LightServer.Managers;
+using LightServer.Types;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -53,9 +54,13 @@ namespace LightServer.Server
                     socket.Send(replyPacket, new Haukcode.Sockets.RdmEndPoint(e.Source));
                     break;
                 case ArtNetOpCodes.Dmx:
-                    // TODO: Some data are comming, SEND TO THE LIGHTSTICKS!
                     var dmxData = (ArtNetDmxPacket)e.Packet;
                     if (dmxData.Universe != SettingsManager.settings.DMXUniverse) break;
+                    _ = WebSocket.SendEvent(new SendableEvent(
+                        dmxData.DmxData[SettingsManager.settings.DMXChannelR - 1],
+                        dmxData.DmxData[SettingsManager.settings.DMXChannelG - 1],
+                        dmxData.DmxData[SettingsManager.settings.DMXChannelB - 1]
+                        ));
                     break;
             }
         }

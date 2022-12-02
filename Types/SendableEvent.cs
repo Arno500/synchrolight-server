@@ -27,6 +27,11 @@ namespace LightServer.Types
             Color = lightEvent.Event.Color;
         }
 
+        public SendableEvent(ushort R, ushort G, ushort B)
+        {
+            Color = new Color((byte)R, (byte)G, (byte)B);
+        }
+
         public SendableEvent() { }
 
         public static SendableEvent EmptyEvent()
