@@ -3,11 +3,32 @@ using NPSMLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Timers;
 using WinRT;
 
 namespace LightServer
 {
+    internal class TickerLock
+        {
+            static object lockObject = new object();
+            static volatile bool isBusyFlag = false;
+
+            internal static bool CanAcquire()
+            {
+                if (!isBusyFlag)
+                    lock (lockObject)
+                        if (!isBusyFlag) //could have changed by the time we acquired lock
+                            return (isBusyFlag = true);
+                return false;
+            }
+
+            internal static void Release()
+            {
+                lock (lockObject)
+                    isBusyFlag = false;
+            }
+        }
 
     internal class Ticker
     {
@@ -17,7 +38,7 @@ namespace LightServer
         private List<Action<PlayerState, bool>> delegateList = new();
 
         private static Lazy<NowPlayingSessionManager> sessionManager = new(() => new NPSMLib.NowPlayingSessionManager());
-        private static bool sessionManagerRegistered = false;
+        private static volatile bool sessionManagerRegistered = false;
         private static MediaPlaybackDataSource dataSource = null;
 
         public static PlayerState playerState = new();
@@ -55,62 +76,71 @@ namespace LightServer
             UpdateSessions();
         }
 
-        public static Ticker GetInstance
+        public static Ticker GetInstance()
         {
-            get
-            {
-                return singletonInstance;
-            }
+           return singletonInstance;
         }
 
         private static void UpdatePlayerState()
         {
             if (!sessionManagerRegistered)
             {
-                sessionManager.Value.SessionListChanged += OnSessionListChanged;
                 sessionManagerRegistered = true;
                 UpdateSessions();
+                sessionManager.Value.SessionListChanged += OnSessionListChanged;
             }
             if (dataSource == null) return;
             var ds = dataSource;
             var playbackInfos = ds.GetMediaPlaybackInfo();
-            var objectInfos = ds.GetMediaObjectInfo();
+            var changed = false;
             var timelineProps = ds.GetMediaTimelineProperties();
             var position = playbackInfos.PlaybackState == NPSMLib.MediaPlaybackState.Playing ? DateTime.Now - timelineProps.PositionSetFileTime + timelineProps.Position : timelineProps.Position;
-            var ticker = Ticker.GetInstance;
-            var changed = false;
-            playerState.PlayState = playbackInfos.PlaybackState;
             playerState.Position = position;
             playerState.Duration = timelineProps.MaxSeekTime;
             playerState.StartTime = timelineProps.PositionSetFileTime.Add(-timelineProps.Position);
-            if (playerState.Title != objectInfos.Title)
+            if (playbackInfos.PlaybackState == MediaPlaybackState.Changing || playerState.Artist == null || playerState.Title == null)
             {
-                changed = true;
-                playerState.Title = objectInfos.Title;
+                var objectInfos = ds.GetMediaObjectInfo();
+                if (playerState.Title != objectInfos.Title)
+                {
+                    changed = true;
+                    playerState.Title = objectInfos.Title;
+                }
+                if (playerState.Artist != (objectInfos.Artist ?? objectInfos.AlbumArtist))
+                {
+                    changed = true;
+                    playerState.Artist = objectInfos.Artist ?? objectInfos.AlbumArtist;
+                }
+                playerState.AlbumImage = ds.GetThumbnailStream();
             }
-            if (playerState.Artist != (objectInfos.Artist ?? objectInfos.AlbumArtist))
-            {
-                changed = true;
-                playerState.Artist = objectInfos.Artist ?? objectInfos.AlbumArtist;
-            }
-            playerState.AlbumImage = ds.GetThumbnailStream();
-            ticker.delegateList.ForEach((callback) => callback(playerState, changed));
+            playerState.PlayState = playbackInfos.PlaybackState;
+            Ticker.GetInstance().delegateList.ForEach((callback) => new Task(() => callback(playerState, changed)).Start());
         }
 
         private static void RunEvent(object source, ElapsedEventArgs e)
         {
-            Ticker.UpdatePlayerState();
+            if (TickerLock.CanAcquire())
+            {
+                try
+                {
+                    Ticker.UpdatePlayerState();
+                }
+                finally
+                {
+                    TickerLock.Release();
+                }
+            }
         }
 
         public static void AddCallback(Action<PlayerState, bool> callback)
         {
-            var ticker = Ticker.GetInstance;
+            var ticker = Ticker.GetInstance();
             ticker.delegateList.Add(callback);
         }
 
         public static bool RemoveCallback(Action<PlayerState, bool> callback)
         {
-            var ticker = Ticker.GetInstance;
+            var ticker = Ticker.GetInstance();
             return ticker.delegateList.Remove(callback);
         }
     }

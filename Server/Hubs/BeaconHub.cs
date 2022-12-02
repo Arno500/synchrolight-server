@@ -21,6 +21,7 @@ namespace LightServer.Server.Hubs
 
         public override async Task OnConnectedAsync()
         {
+            if (Context.ConnectionId == null) return;
             BeaconsManager.Beacons.Add(Context.ConnectionId, new Beacon(Context.ConnectionId));
             await base.OnConnectedAsync();
         }

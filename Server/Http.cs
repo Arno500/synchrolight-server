@@ -1,8 +1,10 @@
 using DBModels;
 using LightServer.Types;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,9 +21,8 @@ namespace LightServer.Server
     }
     public class Http
     {
-        public void Configure(WebApplication app)
+        public void Configure(IEndpointRouteBuilder app)
         {
-            app.MapGet("/", HealthCheck);
             app.MapGet("/health", HealthCheck);
             app.MapGet("/beatsheet/{artist}/{title}", GetBeatsheet);
             app.MapDelete("/beatsheet/{artist}/{title}", DeleteBeatsheet);

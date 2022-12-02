@@ -32,7 +32,7 @@ namespace LightServer.Server
             repeatTimer.AutoReset = true;
         }
 
-        public static async Task SendEvent(SendableEvent? lightEvent)
+        public static async Task SendEvent(SendableEvent lightEvent)
         {
             repeatTimer.Stop();
             await hubContext.Clients.All.SendAsync("LightEvent", lightEvent);

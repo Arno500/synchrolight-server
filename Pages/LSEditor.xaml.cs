@@ -21,10 +21,10 @@ namespace LightServer.Pages
 
         private void WebView2_Loaded(object sender, RoutedEventArgs e)
         {
-            var host = App.Current.As<App>().host;
-            string address = host.Urls.First();
-            int port = int.Parse(address.Split(':').Last());
-            WebView2.Source = new Uri("http://localhost:" + port);
+            //var port = App.port;
+            //string address = host.Urls.First();
+            //int port = int.Parse(address.Split(':').Last());
+            WebView2.Source = new Uri("http://localhost:" + App.port);
         }
     }
 }

@@ -29,6 +29,7 @@ namespace LightServer.Managers
 
         public async void ProcessBeatsheetAsync(PlayerState state, bool newTrack)
         {
+            if (state.Title == null || state.Artist == null) return;
             if (alreadyRunning) return;
             alreadyRunning = true;
             if (newTrack || currentBitSheet == null)

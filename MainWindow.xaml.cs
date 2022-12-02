@@ -161,7 +161,7 @@ namespace LightServer
             m_configurationSource = null;
 
             // Shutdown the internal web server when closing the main window
-            Application.Current.As<App>().host.DisposeAsync();
+            Application.Current.As<App>().host.StopAsync();
         }
 
         private void Window_ThemeChanged(FrameworkElement sender, object args)

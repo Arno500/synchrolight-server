@@ -3,13 +3,25 @@ using LightServer.Managers;
 using LightServer.Server;
 using LightServer.Server.Hubs;
 using Makaretu.Dns;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using System;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using static Haukcode.Rdm.Packets.Status.StatusMessage;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -21,7 +33,8 @@ namespace LightServer
     /// </summary>
     public partial class App : Application
     {
-        internal WebApplication host;
+        internal IHost host;
+        internal static int port;
 
         public DispatcherQueue dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
@@ -37,29 +50,40 @@ namespace LightServer
             // Initialize settings
             new SettingsManager();
 
-            var builder = WebApplication.CreateBuilder();
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy(name: "AllowAnything",
-                    policy =>
-                    {
-                        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-                    });
-            });
+            var configuration = new ConfigurationBuilder()
+                .AddEnvironmentVariables()
+                .AddJsonFile("appsettings.json")
+                .Build();
 
-            builder.Services.AddSignalR();
+            var builder = Host.CreateDefaultBuilder()
+                .ConfigureServices((context, services) =>
+            {
+                services.AddCors(options =>
+                {
+                    options.AddPolicy(name: "AllowAnything",
+                        policy =>
+                        {
+                            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                        });
+                });
+                services.AddSignalR();
+            })
+                .ConfigureWebHostDefaults(configure =>
+            {
+                configure.UseStartup<HttpStartup>().UseConfiguration(configuration);
+            });
 
             host = builder.Build();
 
-            host.MapHub<BeaconHub>("/beacons");
             new WebSocket(host.Services.GetRequiredService(typeof(IHubContext<BeaconHub>)) as IHubContext<BeaconHub>);
 
-            host.Urls.Add("http://*:64321");
-
-            host.UseCors("AllowAnything");
-
-            new Http().Configure(host);
             host.RunAsync();
+
+            var server = host.Services.GetService<IServer>();
+            var addressFeature = server.Features.Get<IServerAddressesFeature>();
+
+            var boundAddress = new Uri(addressFeature.Addresses.First());
+            port = boundAddress.Port;
 
             // Start ArtNet client
             new ArtNetServer();
@@ -77,9 +101,9 @@ namespace LightServer
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            string address = host.Urls.First();
-            int port = int.Parse(address.Split(':').Last());
-            var service = new ServiceProfile("SynchroLight", "_synchrolight._tcp", (ushort)port);
+            //string address = host.Urls.First();
+            //int port = int.Parse(address.Split(':').Last());
+            var service = new ServiceProfile("SynchroLight", "_synchrolight._tcp", (ushort)App.port);
             var sd = new ServiceDiscovery();
             service.AddProperty("proto", "signalr");
             sd.Advertise(service);

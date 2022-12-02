@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>SynchroLight Web</title>
     <style>
         html,
@@ -26,8 +26,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
     <script>
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("http://localhost:64321/beacons", {
-                withCredentials: false
+            .withUrl(`https://${window.location.host}/beacons`, {
+                withCredentials: false,
+                transport: 2
             })
             .configureLogging(signalR.LogLevel.Information)
             .build()
