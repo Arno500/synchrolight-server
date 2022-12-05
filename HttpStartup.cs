@@ -26,6 +26,8 @@ namespace LightServer
                 endpoints.MapHub<BeaconHub>("/beacons");
             });
 
+            app.UseHttpsRedirection();
+
             app.UseFileServer(new FileServerOptions
                 {
                     FileProvider = new PhysicalFileProvider(

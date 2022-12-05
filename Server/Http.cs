@@ -47,7 +47,6 @@ namespace LightServer.Server
 
         private async Task<IResult> StoreBeatsheet([FromBody] BitSheetDTO beatsheet, HttpContext context)
         {
-            HttpRequestRewindExtensions.EnableBuffering(context.Request, 5 * 1000 * 1000);
             using (var beatsheetContext = new BitsheetContext())
             {
                 var alreadyExisting = await beatsheetContext.Bitsheets.SingleOrDefaultAsync(b => b.Title == beatsheet.Metadata.Title && b.Artist == beatsheet.Metadata.Artist);

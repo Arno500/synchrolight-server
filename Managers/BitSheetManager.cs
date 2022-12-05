@@ -38,6 +38,7 @@ namespace LightServer.Managers
                 await LoadBitSheet(state);
             }
             alreadyRunning = false;
+            if (events == null) return;
             LightEvent ?checkEvent;
             if (currentIndex >= events.Count)
             {
